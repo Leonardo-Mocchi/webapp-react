@@ -3,8 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import DefaultLayout from "./layouts/DefaultLayout";
 // Pages
 import HomePage from "./pages/HomePage";
-import Movies from "./pages/Movies";
-import Movie from "./pages/Movie"
+/* import Movies from "./pages/Movies";
+import Movie from "./pages/Movie" */
 
 export default function App() {
   return (
