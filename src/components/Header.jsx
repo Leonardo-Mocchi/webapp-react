@@ -20,7 +20,7 @@ function Header() {
 
             <div id="site_title" className="mx-5 d-flex flex-column justify-content-center">
                 <h1 className="p-0 m-0">IMDBoo</h1>
-                <p className="m-0">The BEST 5-Movies-Only Database Online</p>
+                <p className="m-0">The BEST 5-Movies-Only Online Database</p>
             </div>
 
             <div id="header_complexity_1"></div>
