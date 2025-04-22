@@ -2,15 +2,24 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";
+import { useLoader } from "../contexts/LoaderContext";
+import ReviewForm from "../components/ReviewForm";
 
 export default function Movie() {
     const [movie, setMovie] = useState(null);
     const [movies, setMovies] = useState([]);
+    const [isLoading, setIsLoading] = useState(false); // Local loading state
     const { id } = useParams();
     const navigate = useNavigate();
+    const { showLoader, hideLoader } = useLoader();
 
-    // Fetch the current movie
     useEffect(() => {
+        let isMounted = true; // Prevent state updates if the component unmounts
+        /* console.log("Fetching movie with ID:", id); // Debugging log //debug purposes */
+        setIsLoading(true);
+        showLoader();
+
+        // Fetch the current movie
         fetch(`http://localhost:3000/api/v1/movies/${id}`)
             .then((res) => {
                 if (!res.ok) {
@@ -18,12 +27,22 @@ export default function Movie() {
                 }
                 return res.json();
             })
-            .then((data) => setMovie(data))
-            .catch((err) => console.error("Error fetching movie:", err));
-    }, [id]);
+            .then((data) => {
+                /* console.log("Fetched movie data:", data); //debug purposes */
+                if (isMounted) {
+                    setMovie(data);
+                }
+            })
+            .catch((err) => console.error("Error fetching movie:", err))
+            .finally(() => {
+                if (isMounted) {
+                    /* console.log("Hiding loader after fetching movie"); //debug purposes */
+                    setIsLoading(false);
+                    hideLoader();
+                }
+            });
 
-    // Fetch the list of all movies
-    useEffect(() => {
+        // Fetch the list of all movies
         fetch("http://localhost:3000/api/v1/movies")
             .then((res) => {
                 if (!res.ok) {
@@ -31,19 +50,50 @@ export default function Movie() {
                 }
                 return res.json();
             })
-            .then((data) => setMovies(data))
+            .then((data) => {
+                if (isMounted) {
+                    setMovies(data);
+                }
+            })
             .catch((err) => console.error("Error fetching movies:", err));
-    }, []);
 
-    // Guard clause to prevent rendering when movie is null
-    if (!movie) {
-        return null; // Render nothing until movie is fetched
-    }
+        return () => {
+            isMounted = false; // Cleanup to prevent state updates after unmount
+        };
+    }, [id, showLoader, hideLoader]);
+
+    const handleNewReview = (updatedMovie) => {
+        setMovie(updatedMovie);
+    };
 
     // Determine the previous and next movies
     const currentIndex = movies.findIndex((m) => m.id === parseInt(id));
     const previousMovie = currentIndex > 0 ? movies[currentIndex - 1] : null;
     const nextMovie = currentIndex < movies.length - 1 ? movies[currentIndex + 1] : null;
+
+    // Navigation handlers for previous and next movies
+    const handlePreviousMovie = () => {
+        if (previousMovie) {
+            navigate(`/movies/${previousMovie.id}`);
+        }
+    };
+
+    const handleNextMovie = () => {
+        if (nextMovie) {
+            navigate(`/movies/${nextMovie.id}`);
+        }
+    };
+
+    // Render loading state if movie is not yet loaded
+    if (isLoading || !movie) {
+        return (
+            <main className="movie-page">
+                <div className="container py-2">
+                    <p className="text-light">Loading movie details...</p>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="movie-page">
@@ -56,11 +106,7 @@ export default function Movie() {
                         <button
                             className={`btn btn-custom me-2 d-flex align-items-center ${!previousMovie && "d-none"}`}
                             type="button"
-                            onClick={() => {
-                                if (previousMovie) {
-                                    navigate(`/movies/${previousMovie.id}`);
-                                }
-                            }}
+                            onClick={handlePreviousMovie}
                         >
                             <i className="bi bi-arrow-left"></i>
                             <span className="ms-2">Previous Movie</span>
@@ -68,11 +114,7 @@ export default function Movie() {
                         <button
                             className={`btn btn-custom d-flex align-items-center ${!nextMovie && "d-none"}`}
                             type="button"
-                            onClick={() => {
-                                if (nextMovie) {
-                                    navigate(`/movies/${nextMovie.id}`);
-                                }
-                            }}
+                            onClick={handleNextMovie}
                             disabled={!nextMovie}
                         >
                             <span className="me-2">Next Movie</span>
@@ -104,7 +146,10 @@ export default function Movie() {
                     </div>
                 </div>
 
-                <section className="mt-5">
+                {/* Review Form */}
+                <ReviewForm movieId={id} onReviewSubmit={handleNewReview} />
+
+                <section className="mt-2">
                     <h2 className="text-highlight">Reviews</h2>
                     {movie.reviews?.length > 0 ? (
                         <ul className="list-group">

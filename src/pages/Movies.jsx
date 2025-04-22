@@ -1,26 +1,31 @@
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useLoader } from "../contexts/LoaderContext";
 
 const api_endpoint = "http://localhost:3000/api/v1/movies";
 
 function Movies() {
     const [movies, setMovies] = useState([]);
+    const { showLoader, hideLoader } = useLoader();
 
-    function fetchMovies() {
+    useEffect(() => {
+        showLoader();
         fetch(api_endpoint)
-            .then(res => {
+            .then((res) => {
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
                 return res.json();
             })
-            .then(data => {
+            .then((data) => {
                 setMovies(data);
+                hideLoader();
             })
-            .catch(error => console.error("Error fetching movies:", error));
-    }
-
-    useEffect(fetchMovies, []);
+            .catch((error) => {
+                console.error("Error fetching movies:", error);
+                hideLoader();
+            });
+    }, [showLoader, hideLoader]);
 
     return (
         <main>
